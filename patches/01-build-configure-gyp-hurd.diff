@@ -1,0 +1,36 @@
+diff --git a/common.gypi b/common.gypi
+index 685e0362..c00603e0 100644
+--- a/common.gypi
++++ b/common.gypi
+@@ -576,11 +576,15 @@
+           'NOMINMAX',
+         ],
+       }],
+-      [ 'OS in "linux freebsd openbsd solaris aix os400 openharmony"', {
++      [ 'OS=="hurd"', {
++        'defines': [ '_GNU_SOURCE', 'PATH_MAX=4096' ],
++        'libraries': [ '-latomic' ],
++      }],
++      [ 'OS in "linux freebsd openbsd solaris aix os400 openharmony hurd"', {
+         'cflags': [ '-pthread' ],
+         'ldflags': [ '-pthread' ],
+       }],
+-      [ 'OS in "linux freebsd openbsd solaris android aix os400 cloudabi openharmony"', {
++      [ 'OS in "linux freebsd openbsd solaris android aix os400 cloudabi openharmony hurd"', {
+         'cflags': [ '-Wall', '-Wextra', '-Wno-unused-parameter', ],
+         'cflags_cc': [
+           '-fno-rtti',
+diff --git a/configure.py b/configure.py
+index b826e24e..4a428058 100755
+--- a/configure.py
++++ b/configure.py
+@@ -45,7 +45,8 @@ from utils import SearchFiles
+ parser = argparse.ArgumentParser()
+ 
+ valid_os = ('win', 'mac', 'solaris', 'freebsd', 'openbsd', 'linux',
+-            'android', 'aix', 'cloudabi', 'os400', 'ios', 'openharmony')
++            'android', 'aix', 'cloudabi', 'os400', 'ios', 'openharmony',
++            'hurd')
+ valid_arch = ('arm', 'arm64', 'ia32', 'mips', 'mipsel', 'mips64el',
+               'ppc64', 'x64', 'x86', 'x86_64', 's390x', 'riscv64', 'loong64')
+ valid_arm_float_abi = ('soft', 'softfp', 'hard')

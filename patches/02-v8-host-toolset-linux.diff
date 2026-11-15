@@ -1,0 +1,13 @@
+diff --git a/tools/v8_gypfiles/v8.gyp b/tools/v8_gypfiles/v8.gyp
+index 37000184..9d658b5f 100644
+--- a/tools/v8_gypfiles/v8.gyp
++++ b/tools/v8_gypfiles/v8.gyp
+@@ -1439,7 +1439,7 @@
+             }],
+           ],
+         }],
+-        ['OS=="linux" or OS=="openharmony"', {
++        ['OS=="linux" or OS=="openharmony" or (OS=="hurd" and _toolset=="host")', {
+           'sources': [
+             '<(V8_ROOT)/src/base/debug/stack_trace_posix.cc',
+             '<(V8_ROOT)/src/base/platform/platform-linux.cc',

@@ -1,0 +1,89 @@
+diff --git a/deps/v8/include/v8config.h b/deps/v8/include/v8config.h
+index 9581df67..3f151bc0 100644
+--- a/deps/v8/include/v8config.h
++++ b/deps/v8/include/v8config.h
+@@ -118,6 +118,11 @@ path. Add it with -I<path> to the command line
+ # define V8_OS_POSIX 1
+ # define V8_OS_STRING "cygwin"
+ 
++#elif defined(__GNU__)
++# define V8_OS_HURD 1
++# define V8_OS_POSIX 1
++# define V8_OS_STRING "hurd"
++
+ #elif defined(__linux__)
+ # define V8_OS_LINUX 1
+ # define V8_OS_POSIX 1
+@@ -233,7 +238,7 @@ path. Add it with -I<path> to the command line
+ #endif
+ 
+ #ifdef V8_OS_LINUX
+-# define V8_TARGET_OS_LINUX
++# define V8_TARGET_OS_LINUX 1
+ #endif
+ 
+ #ifdef V8_OS_MACOS
+diff --git a/deps/v8/src/base/platform/platform-hurd.cc b/deps/v8/src/base/platform/platform-hurd.cc
+new file mode 100644
+index 00000000..804d1c86
+--- /dev/null
++++ b/deps/v8/src/base/platform/platform-hurd.cc
+@@ -0,0 +1,32 @@
++// Copyright 2026 the V8 project authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++// GNU/Hurd platform support.  Hurd is POSIX-like, so most of the
++// implementation lives in platform-posix.cc.  This file only provides the
++// small set of Linux-specific entry points that V8 expects to exist.
++
++#include "src/base/platform/platform.h"
++
++#include <vector>
++
++#include "src/base/platform/platform-posix-time.h"
++#include "src/base/platform/platform-posix.h"
++
++namespace v8 {
++namespace base {
++
++TimezoneCache* OS::CreateTimezoneCache() {
++  return new PosixDefaultTimezoneCache();
++}
++
++std::vector<OS::SharedLibraryAddress> OS::GetSharedLibraryAddresses() {
++  return {};
++}
++
++void OS::SignalCodeMovingGC() {}
++
++void OS::AdjustSchedulingParams() {}
++
++}  // namespace base
++}  // namespace v8
+diff --git a/tools/v8_gypfiles/v8.gyp b/tools/v8_gypfiles/v8.gyp
+index 9d658b5f..57e0a5b1 100644
+--- a/tools/v8_gypfiles/v8.gyp
++++ b/tools/v8_gypfiles/v8.gyp
+@@ -1451,6 +1451,21 @@
+             ],
+           },
+         }],
++        ['OS=="hurd" and _toolset=="target"', {
++          'sources': [
++            '<(V8_ROOT)/src/base/platform/platform-hurd.cc',
++          ],
++        }],
++        ['OS=="hurd" and _toolset=="target"', {
++          'sources': [
++            '<(V8_ROOT)/src/base/debug/stack_trace_posix.cc',
++          ],
++          'link_settings': {
++            'libraries': [
++              '-ldl',
++            ],
++          },
++        }],
+         ['OS in "aix os400"', {
+           'variables': {
+             # Used to differentiate `AIX` and `OS400`(IBM i).

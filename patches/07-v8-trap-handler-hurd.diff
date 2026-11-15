@@ -1,0 +1,61 @@
+diff --git a/deps/v8/src/trap-handler/handler-inside-posix.cc b/deps/v8/src/trap-handler/handler-inside-posix.cc
+index 0ce8abc1..65e9bd86 100644
+--- a/deps/v8/src/trap-handler/handler-inside-posix.cc
++++ b/deps/v8/src/trap-handler/handler-inside-posix.cc
+@@ -27,7 +27,7 @@
+ 
+ #include <signal.h>
+ 
+-#if defined(V8_OS_LINUX) || defined(V8_OS_FREEBSD)
++#if defined(V8_OS_LINUX) || defined(V8_OS_FREEBSD) || defined(V8_OS_HURD)
+ #include <ucontext.h>
+ #elif V8_OS_DARWIN
+ #include <sys/ucontext.h>
+@@ -53,7 +53,7 @@ namespace trap_handler {
+ #define CONTEXT_REG(reg, REG) &uc->uc_mcontext.regs[REG]
+ #elif V8_OS_LINUX && (V8_HOST_ARCH_LOONG64 || V8_HOST_ARCH_RISCV64)
+ #define CONTEXT_REG(reg, REG) &uc->uc_mcontext.__gregs[REG]
+-#elif V8_OS_LINUX
++#elif (V8_OS_LINUX || V8_OS_HURD)
+ #define CONTEXT_REG(reg, REG) &uc->uc_mcontext.gregs[REG_##REG]
+ #elif V8_OS_DARWIN && V8_HOST_ARCH_ARM64
+ #define CONTEXT_REG(reg, REG) &uc->uc_mcontext->__ss.__x[REG]
+diff --git a/deps/v8/src/trap-handler/handler-inside-posix.h b/deps/v8/src/trap-handler/handler-inside-posix.h
+index 745e92d5..33cfe87b 100644
+--- a/deps/v8/src/trap-handler/handler-inside-posix.h
++++ b/deps/v8/src/trap-handler/handler-inside-posix.h
+@@ -13,7 +13,7 @@ namespace v8 {
+ namespace internal {
+ namespace trap_handler {
+ 
+-#if V8_OS_LINUX || V8_OS_FREEBSD
++#if V8_OS_LINUX || V8_OS_FREEBSD || V8_OS_HURD
+ constexpr int kOobSignal = SIGSEGV;
+ #elif V8_OS_DARWIN
+ constexpr int kOobSignal = SIGBUS;
+diff --git a/deps/v8/src/trap-handler/trap-handler.h b/deps/v8/src/trap-handler/trap-handler.h
+index bd6f1959..e9feae05 100644
+--- a/deps/v8/src/trap-handler/trap-handler.h
++++ b/deps/v8/src/trap-handler/trap-handler.h
+@@ -18,7 +18,7 @@ namespace v8::internal::trap_handler {
+ // X64 on Linux, Windows, MacOS, FreeBSD.
+ #if V8_HOST_ARCH_X64 && V8_TARGET_ARCH_X64 &&                        \
+     ((V8_OS_LINUX && !V8_OS_ANDROID) || V8_OS_WIN || V8_OS_DARWIN || \
+-     V8_OS_FREEBSD)
++     V8_OS_FREEBSD || V8_OS_HURD)
+ #define V8_TRAP_HANDLER_SUPPORTED true
+ // Arm64 (non-simulator) on Linux, Windows, MacOS.
+ #elif V8_TARGET_ARCH_ARM64 && V8_HOST_ARCH_ARM64 && \
+diff --git a/tools/v8_gypfiles/v8.gyp b/tools/v8_gypfiles/v8.gyp
+index 57e0a5b1..94509bcf 100644
+--- a/tools/v8_gypfiles/v8.gyp
++++ b/tools/v8_gypfiles/v8.gyp
+@@ -1156,7 +1156,7 @@
+             }],
+             ['v8_enable_webassembly==1', {
+               'conditions': [
+-                ['OS in "linux mac ios freebsd openharmony"', {
++                ['OS in "linux mac ios freebsd openharmony hurd"', {
+                   'sources': [
+                     '<(V8_ROOT)/src/trap-handler/handler-inside-posix.cc',
+                     '<(V8_ROOT)/src/trap-handler/handler-outside-posix.cc',

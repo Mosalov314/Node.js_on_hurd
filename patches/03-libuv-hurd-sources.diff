@@ -1,0 +1,77 @@
+diff --git a/deps/uv/src/unix/hurd.c b/deps/uv/src/unix/hurd.c
+index 99f4f2ae..26521ecf 100644
+--- a/deps/uv/src/unix/hurd.c
++++ b/deps/uv/src/unix/hurd.c
+@@ -154,6 +154,19 @@ int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count) {
+ 
+   *count = hbi.avail_cpus;
+ 
++  /* XXX the Hurd does not expose per-CPU information yet.  Fill in the
++   * model string so that consumers such as Node's os.cpus() do not
++   * dereference a NULL pointer. */
++  for (int i = 0; i < *count; i++) {
++    (*cpu_infos)[i].model = uv__strdup("GNU/Hurd CPU");
++    if ((*cpu_infos)[i].model == NULL) {
++      for (int j = 0; j < i; j++) uv__free((*cpu_infos)[j].model);
++      uv__free(*cpu_infos);
++      err = UV_ENOMEM;
++      goto abort;
++    }
++  }
++
+   return 0;
+   
+  abort:
+diff --git a/deps/uv/uv.gyp b/deps/uv/uv.gyp
+index 760a3cdb..b1ab2dc0 100644
+--- a/deps/uv/uv.gyp
++++ b/deps/uv/uv.gyp
+@@ -133,6 +133,14 @@
+       'src/unix/random-getrandom.c',
+       'src/unix/random-sysctl-linux.c',
+     ],
++    'uv_sources_hurd': [
++      'src/unix/bsd-ifaddrs.c',
++      'src/unix/no-fsevents.c',
++      'src/unix/no-proctitle.c',
++      'src/unix/posix-hrtime.c',
++      'src/unix/posix-poll.c',
++      'src/unix/hurd.c',
++    ],
+     'uv_sources_android': [
+       'src/unix/linux.c',
+       'src/unix/procfs-exepath.c',
+@@ -254,7 +262,7 @@
+             }],
+           ],
+         }],
+-        [ 'OS in "linux mac ios android zos openharmony"', {
++        [ 'OS in "linux mac ios android zos openharmony" or (OS=="hurd" and _toolset=="host")', {
+           'sources': [ 'src/unix/proctitle.c' ],
+         }],
+         [ 'OS != "zos"', {
+@@ -278,7 +286,7 @@
+             '_DARWIN_UNLIMITED_SELECT=1',
+           ]
+         }],
+-        [ 'OS=="linux" or OS=="openharmony"', {
++        [ 'OS=="linux" or OS=="openharmony" or (OS=="hurd" and _toolset=="host")', {
+           'defines': [ '_GNU_SOURCE' ],
+           'sources': [
+             '<@(uv_sources_linux)',
+@@ -287,6 +295,15 @@
+             'libraries': [ '-ldl', '-lrt' ],
+           },
+         }],
++        [ 'OS=="hurd" and _toolset=="target"', {
++          'defines': [ '_GNU_SOURCE' ],
++          'sources': [
++            '<@(uv_sources_hurd)',
++          ],
++          'link_settings': {
++            'libraries': [ '-ldl' ],
++          },
++        }],
+         [ 'OS=="android"', {
+           'defines': [
+             '_GNU_SOURCE',

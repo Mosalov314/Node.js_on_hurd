@@ -1,0 +1,9 @@
+node-v*/
+node-*.tar.xz
+stage/
+artifacts/
+out/
+config.gypi
+*.o
+*.node
+.DS_Store

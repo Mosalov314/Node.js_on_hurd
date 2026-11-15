@@ -1,0 +1,30 @@
+diff --git a/deps/v8/src/base/platform/platform-posix.cc b/deps/v8/src/base/platform/platform-posix.cc
+index 5c93b3aa..7881dc84 100644
+--- a/deps/v8/src/base/platform/platform-posix.cc
++++ b/deps/v8/src/base/platform/platform-posix.cc
+@@ -596,6 +596,13 @@ bool OS::DiscardSystemPages(void* address, size_t size) {
+   if (ret != 0 && errno == EINVAL) {
+     ret = madvise(reinterpret_cast<caddr_t>(address), size, MADV_DONTNEED);
+   }
++#elif defined(V8_OS_HURD)
++  // GNU/Hurd's madvise(MADV_DONTNEED) is not universally implemented.
++  // Discarding is only an optimization, so ignore unsupported requests.
++  int ret = madvise(address, size, MADV_DONTNEED);
++  if (ret != 0 && (errno == ENOSYS || errno == EINVAL)) {
++    return true;
++  }
+ #else
+   int ret = madvise(address, size, MADV_DONTNEED);
+ #endif
+@@ -1155,6 +1162,11 @@ bool AddressSpaceReservation::DecommitPages(void* address, size_t size) {
+ // POSIX thread support.
+ //
+ 
++#ifndef PTHREAD_STACK_MIN
++// GNU/Hurd does not define PTHREAD_STACK_MIN in <pthread.h>.
++#define PTHREAD_STACK_MIN 16384
++#endif
++
+ class Thread::PlatformData {
+  public:
+   PlatformData() : thread_(kNoThread) {}
